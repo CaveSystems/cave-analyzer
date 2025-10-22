@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36202.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cave.CleanCodeAnalyzer", "Cave.CleanCodeAnalyzer\Cave.CleanCodeAnalyzer.csproj", "{8B248249-2264-EFD2-2FD0-9388E0CC4F6F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitignore = .gitignore
+		azure-pipelines.yml = azure-pipelines.yml
+		build.bat = build.bat
+		cavesystems.png = cavesystems.png
+		clean.bat = clean.bat
+		CodeMaid.config = CodeMaid.config
+		Directory.Build.props = Directory.Build.props
+		Directory.Build.targets = Directory.Build.targets
+		global.json = global.json
+		LICENSE = LICENSE
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8B248249-2264-EFD2-2FD0-9388E0CC4F6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B248249-2264-EFD2-2FD0-9388E0CC4F6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B248249-2264-EFD2-2FD0-9388E0CC4F6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B248249-2264-EFD2-2FD0-9388E0CC4F6F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {21DAAF26-F912-4ADB-BD42-B16B8B8BBF18}
+	EndGlobalSection
+EndGlobal

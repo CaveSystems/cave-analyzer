@@ -1,0 +1,9 @@
+{
+  "sdk": {
+    "version": "8.0.100",
+    "rollForward": "latestFeature"
+  },
+  "msbuild-sdks": {
+    "Microsoft.CodeAnalysis.Analyzers": "3.3.3"
+  }
+}

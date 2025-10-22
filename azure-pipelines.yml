@@ -1,0 +1,151 @@
+# .NET Cave Build Script
+# Set Major Build Version in variables
+# before merging next to master, branch to new release version vX
+
+# trigger: add any branches with releases to build AND change fixedBuildVersion variable!
+trigger:
+- refs/tags/*
+- bugfix/*
+- feature/*
+- master
+- next
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  fixedBuildVersion: '4.0'
+  solution: '**/*.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+  system.debug: true
+
+steps:
+
+- checkout: self 
+  clean: true
+  fetchDepth: 99999
+  lfs: false
+  submodules: false
+
+- task: PowerShell@2
+  name: SetGitVars
+  displayName: Set git variables
+  env:
+    BUILD_BUILDNUMBER: $(Build.BuildNumber)
+    BUILD_SOURCEBRANCH: $(Build.SourceBranch)
+    BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
+  inputs:
+    targetType: inline
+    script: |
+      $fixedVersion = [Version]"$(fixedBuildVersion)"
+      # build 
+      $build = $env:BUILD_BUILDNUMBER.Split('.')
+      $build = $build[0] + "-" + ([int]$build[1]).ToString("x4")
+      echo "Build: $build"
+      # set branch for tag lookup
+      $branch = $env:BUILD_SOURCEBRANCH.Replace("refs/heads/", "")
+      git branch $branch
+      git branch --set-upstream-to=origin/$branch --force
+      git fetch
+      # get latest tag in history
+      $gitTag = "$(git describe --tags --always $branch)".Trim().TrimStart('v')
+      # possible return values: 'hash' (no tags), 'tag-hash' (old tag), 'tag' (if commit == tag)
+      if (!$gitTag.Contains('.'))
+      {
+        echo "no tag set yet!"
+        $gitTag = "0.0.0-$gitTag"
+      }
+      if (!$gitTag.Contains('-'))
+      {
+        echo "commit has valid tag set!"
+        $version = $gitTag
+      }
+      else
+      {
+        $semVer = "ci-$env:BUILD_SOURCEBRANCHNAME-$build"
+        # semVer = ci-branch-yyyyMMdd-NNNN
+        $gitTagVersion = [Version]$gitTag.Split('-')[0]
+        if ($gitTagVersion.Major -ne $fixedVersion.Major)
+        {
+          echo "fixed version major differs from last git tag, using fixed version!"
+          $version = "$fixedVersion-$semVer"
+        }
+        else
+        {
+          echo "using git tag version, incrementing build number!"
+          $version = "$($gitTagVersion.Major).$($gitTagVersion.Minor).$($gitTagVersion.Build+1)-$semVer"
+        }
+      }	  
+      echo "branch = $branch"
+      echo "fixedVersion = '$fixedVersion'"
+      echo "gitTag = '$gitTag'"
+      echo "build version = '$version'"
+      Write-Host "##vso[task.setvariable variable=Version]$version"
+
+- task: NuGetToolInstaller@0
+  inputs:
+    versionSpec: '>=4.9.0'
+
+- task: UseDotNet@2
+  displayName: 'Install .NET sdk 8'
+  inputs:
+    packageType: sdk
+    version: 8.x
+    installationPath: $(Agent.ToolsDirectory)/dotnet
+
+- task: NuGetCommand@2
+  displayName: Restore nuget packages
+  inputs:
+    restoreSolution: '$(solution)'
+
+- task: VSBuild@1
+  displayName: Build solution
+  inputs:
+    maximumCpuCount: true
+    solution: '$(solution)'
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
+
+- task: VSTest@2
+  displayName: Test net latest
+  inputs:
+    runSettingsFile: 'Tests.RunSettings'
+    runInParallel: false
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
+    codeCoverageEnabled: true
+    testAssemblyVer2: |
+      **/bin/$(buildConfiguration)/net?.?/Test.dll
+
+- task: VSTest@2
+  displayName: Test net2x, net3x
+  inputs:
+    runSettingsFile: 'Tests.RunSettings'
+    runInParallel: false
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
+    codeCoverageEnabled: true
+    testAssemblyVer2: |
+      **/bin/$(buildConfiguration)/net20/Test.exe
+      **/bin/$(buildConfiguration)/net35/Test.exe
+
+- task: VSTest@2
+  displayName: Test net4x
+  inputs:
+    runSettingsFile: 'Tests.RunSettings'
+    runInParallel: false
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
+    codeCoverageEnabled: true
+    testAssemblyVer2: |
+      **/bin/$(buildConfiguration)/net4?/Test.exe
+
+- task: NuGetCommand@2
+  displayName: Push to nuget (release)
+  inputs:
+    command: push
+    packagesToPush: '$(Build.SourcesDirectory)/**/bin/Release/*.nupkg'
+    nuGetFeedType: external
+    publishFeedCredentials: 'nuget-default'
+    includeSymbols: true
