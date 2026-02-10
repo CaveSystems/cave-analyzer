@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path="azure-pipelines.yml" />
+    <File Path="build.bat" />
+    <File Path="cavesystems.png" />
+    <File Path="clean.bat" />
+    <File Path="CodeMaid.config" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
+    <File Path="global.json" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="Cave.CleanCode.Analyzer/Cave.CleanCode.Analyzer.csproj" />
+  <Project Path="Cave.CleanCode.CodeFixes/Cave.CleanCode.CodeFixes.csproj" />
+  <Project Path="Cave.CleanCodeAnalyzer.Package/Cave.CleanCodeAnalyzer.Package.csproj" />
+</Solution>

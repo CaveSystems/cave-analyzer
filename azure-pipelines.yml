@@ -14,8 +14,8 @@ pool:
   vmImage: 'windows-latest'
 
 variables:
-  fixedBuildVersion: '4.0'
-  solution: '**/*.sln'
+  fixedBuildVersion: '1.0'
+  solution: '**/*.slnx'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
   system.debug: true
@@ -24,9 +24,9 @@ steps:
 
 - checkout: self 
   clean: true
-  fetchDepth: 99999
-  lfs: false
-  submodules: false
+  fetchDepth: 0
+  lfs: true
+  submodules: true
 
 - task: PowerShell@2
   name: SetGitVars
@@ -38,108 +38,72 @@ steps:
   inputs:
     targetType: inline
     script: |
-      $fixedVersion = [Version]"$(fixedBuildVersion)"
-      # build 
-      $build = $env:BUILD_BUILDNUMBER.Split('.')
-      $build = $build[0] + "-" + ([int]$build[1]).ToString("x4")
-      echo "Build: $build"
-      # set branch for tag lookup
-      $branch = $env:BUILD_SOURCEBRANCH.Replace("refs/heads/", "")
-      git branch $branch
-      git branch --set-upstream-to=origin/$branch --force
-      git fetch
-      # get latest tag in history
-      $gitTag = "$(git describe --tags --always $branch)".Trim().TrimStart('v')
-      # possible return values: 'hash' (no tags), 'tag-hash' (old tag), 'tag' (if commit == tag)
-      if (!$gitTag.Contains('.'))
-      {
-        echo "no tag set yet!"
-        $gitTag = "0.0.0-$gitTag"
-      }
-      if (!$gitTag.Contains('-'))
-      {
-        echo "commit has valid tag set!"
-        $version = $gitTag
-      }
-      else
-      {
-        $semVer = "ci-$env:BUILD_SOURCEBRANCHNAME-$build"
-        # semVer = ci-branch-yyyyMMdd-NNNN
-        $gitTagVersion = [Version]$gitTag.Split('-')[0]
-        if ($gitTagVersion.Major -ne $fixedVersion.Major)
+        git clean -fdx
+        $fixedVersion = [Version]"$(fixedBuildVersion)"
+        $gitTag = "$(git describe --tags --always)".Trim().TrimStart('v')
+        # possible return values: 'hash' (no tags), 'tag-hash' (old tag), 'tag' (if commit == tag)
+        if (!$gitTag.Contains('.'))
         {
-          echo "fixed version major differs from last git tag, using fixed version!"
-          $version = "$fixedVersion-$semVer"
+          echo "no tag set yet!"
+          $gitTag = "0.0.0-$gitTag"
+        }
+        if (!$gitTag.Contains('-'))
+        {
+          echo "commit has valid tag set!"
+          # tag compile, use tag version
+          $version = $gitTag
         }
         else
         {
-          echo "using git tag version, incrementing build number!"
-          $version = "$($gitTagVersion.Major).$($gitTagVersion.Minor).$($gitTagVersion.Build+1)-$semVer"
-        }
-      }	  
-      echo "branch = $branch"
-      echo "fixedVersion = '$fixedVersion'"
-      echo "gitTag = '$gitTag'"
-      echo "build version = '$version'"
-      Write-Host "##vso[task.setvariable variable=Version]$version"
+          $semVer = "ci-$env:BUILD_BUILDNUMBER"
+          # semVer = ci-yyyyMMdd-NN
+          $semVer = $semVer.Replace('_', '-').Replace(' ', '-');
+          $gitTagVersion = [Version]$gitTag.Split('-')[0]
+          if (($gitTagVersion.Major -ne $fixedVersion.Major) -or ($gitTagVersion.Minor -ne $fixedVersion.Minor))
+          {
+            echo "fixed version major differs from last git tag, using fixed version!"
+            $build = [Math]::Max($fixedVersion.Build, 0) + 1
+            $version = "$($fixedVersion.Major).$($fixedVersion.Minor).$build-$semVer"
+          }
+          else
+          {
+            echo "using git tag version, incrementing build number!"
+            $build = [Math]::Max($gitTagVersion.Build, 0) + 1
+            $version = "$($gitTagVersion.Major).$($gitTagVersion.Minor).$build-$semVer"
+          }
+        }	  
+        echo "branch = $env:BUILD_SOURCEBRANCHNAME"
+        echo "fixedVersion = '$fixedVersion'"
+        echo "gitTag = '$gitTag'"
+        echo "build version = '$version'"
+        Write-Host "##vso[task.setvariable variable=Version]$version"
 
 - task: NuGetToolInstaller@0
   inputs:
     versionSpec: '>=4.9.0'
 
 - task: UseDotNet@2
-  displayName: 'Install .NET sdk 8'
+  displayName: 'Install .NET Core sdk'
   inputs:
     packageType: sdk
-    version: 8.x
+    useGlobalJson: true
     installationPath: $(Agent.ToolsDirectory)/dotnet
 
-- task: NuGetCommand@2
-  displayName: Restore nuget packages
+- task: NuGetToolInstaller@0
   inputs:
+    versionSpec: '>=4.9.0'
+
+- task: NuGetCommand@2
+  inputs:
+    command: 'restore'
     restoreSolution: '$(solution)'
 
-- task: VSBuild@1
-  displayName: Build solution
+- task: DotNetCoreCLI@2
+  displayName: Build .NET solution
   inputs:
-    maximumCpuCount: true
-    solution: '$(solution)'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
-
-- task: VSTest@2
-  displayName: Test net latest
-  inputs:
-    runSettingsFile: 'Tests.RunSettings'
-    runInParallel: false
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
-    codeCoverageEnabled: true
-    testAssemblyVer2: |
-      **/bin/$(buildConfiguration)/net?.?/Test.dll
-
-- task: VSTest@2
-  displayName: Test net2x, net3x
-  inputs:
-    runSettingsFile: 'Tests.RunSettings'
-    runInParallel: false
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
-    codeCoverageEnabled: true
-    testAssemblyVer2: |
-      **/bin/$(buildConfiguration)/net20/Test.exe
-      **/bin/$(buildConfiguration)/net35/Test.exe
-
-- task: VSTest@2
-  displayName: Test net4x
-  inputs:
-    runSettingsFile: 'Tests.RunSettings'
-    runInParallel: false
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
-    codeCoverageEnabled: true
-    testAssemblyVer2: |
-      **/bin/$(buildConfiguration)/net4?/Test.exe
+    command: 'build'
+    projects: '$(solution)'
+    arguments: '--configuration $(buildConfiguration)'
 
 - task: NuGetCommand@2
   displayName: Push to nuget (release)
@@ -148,4 +112,3 @@ steps:
     packagesToPush: '$(Build.SourcesDirectory)/**/bin/Release/*.nupkg'
     nuGetFeedType: external
     publishFeedCredentials: 'nuget-default'
-    includeSymbols: true

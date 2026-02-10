@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<IncludeBuildOutput>false</IncludeBuildOutput>
+		<IsPackable>true</IsPackable>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+
+		<!-- NuGet-Paket-Infos -->
+		<PackageId>Cave.CleanCodeAnalyzer</PackageId>
+		<Description>Analyzer und Codefixes zur Durchsetzung von Clean Code Regeln</Description>
+		<PackageTags>Roslyn;Analyzer;CleanCode</PackageTags>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageProjectUrl>https://github.com/CaveSystems/cave-analyzer</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/CaveSystems/cave-analyzer</RepositoryUrl>
+		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+		<NoPackageAnalysis>true</NoPackageAnalysis>
+	</PropertyGroup>
+
+	<!-- Referenzen auf Analyzer + CodeFix-Projekte -->
+	<ItemGroup>
+		<ProjectReference Include="..\Cave.CleanCode.Analyzer\Cave.CleanCode.Analyzer.csproj" ReferenceOutputAssembly="false"/>
+		<ProjectReference Include="..\Cave.CleanCode.CodeFixes\Cave.CleanCode.CodeFixes.csproj" ReferenceOutputAssembly="false"/>
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Analyzer-DLL packen -->
+		<None Include="..\Cave.CleanCode.Analyzer\bin\$(Configuration)\netstandard2.0\Cave.CleanCode.Analyzer.dll"
+			  Pack="true"
+			  PackagePath="analyzers/dotnet/cs" />
+
+		<!-- CodeFix-DLL packen -->
+		<None Include="..\Cave.CleanCode.CodeFixes\bin\$(Configuration)\netstandard2.0\Cave.CleanCode.CodeFixes.dll"
+			  Pack="true"
+			  PackagePath="analyzers/dotnet/cs" />
+	</ItemGroup>
+
+</Project>

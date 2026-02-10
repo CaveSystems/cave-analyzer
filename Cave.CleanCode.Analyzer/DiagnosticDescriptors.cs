@@ -2,8 +2,14 @@
 
 namespace CleanCodeAnalyzer;
 
+/// <summary>
+/// Implementierte Diagnosen
+/// </summary>
 public static class DiagnosticDescriptors
 {
+    /// <summary>
+    /// Verwendung von 'private' ist nicht erlaubt
+    /// </summary>
     public static readonly DiagnosticDescriptor NoPrivateModifier = new DiagnosticDescriptor(
         id: "CC0001",
         title: "Verwendung von 'private' ist nicht erlaubt",
@@ -12,7 +18,9 @@ public static class DiagnosticDescriptors
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
-
+    /// <summary>
+    /// Private Member müssen camelCase sein
+    /// </summary>
     public static readonly DiagnosticDescriptor PrivateCamelCaseRule = new(
         id: "CC0002",
         title: "Private Member müssen camelCase sein",
@@ -21,6 +29,9 @@ public static class DiagnosticDescriptors
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
+    /// <summary>
+    /// Nicht-private Member müssen PascalCase sein
+    /// </summary>
     public static readonly DiagnosticDescriptor PublicPascalCaseRule = new(
         id: "CC0003",
         title: "Nicht-private Member müssen PascalCase sein",
@@ -29,6 +40,9 @@ public static class DiagnosticDescriptors
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
+    /// <summary>
+    /// Unterstriche in Namen sind nicht erlaubt
+    /// </summary>
     public static readonly DiagnosticDescriptor NoUnderscoreRule = new(
         id: "CC0004",
         title: "Unterstriche in Namen sind nicht erlaubt",
